@@ -166,6 +166,10 @@ export default class App extends Vue {
 #qso-log {
   border: 1px solid black;
   margin-bottom: 1em;
+
+  tr:nth-child(odd) {
+    background-color: #b0b0b0;
+  }
 }
 
 .callsign-input {
