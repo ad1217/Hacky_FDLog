@@ -8,7 +8,8 @@ import * as Bundler from 'parcel-bundler';
 
 import { createConnection } from 'typeorm';
 
-import { QSO, QSOEntity, isCompleteQSO } from '../QSO';
+import { QSO, isCompleteQSO } from '../QSO';
+import QSOEntity from './QSOEntity';
 
 const wsInstance = expressWs(express());
 const app = wsInstance.app;
