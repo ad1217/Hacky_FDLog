@@ -1,5 +1,9 @@
 <template>
   <div>
+    <svg class="websocket-indicator" viewBox="-5 -5 10 10">
+      <circle :class="websocketState" r="5" />
+    </svg>
+
     <table id="qso-log">
       <tr>
         <th v-for="header in Object.values(headers)" :key="header">
@@ -12,6 +16,7 @@
         </td>
       </tr>
     </table>
+
     <span>#{{ log.length }}</span>
     <span>{{ currentEntry.timestamp.toISOString() }}</span>
     <form id="qso-form" @submit.prevent="logQSO">
@@ -45,11 +50,7 @@ import { QSO, QSOHeaders, isCompleteQSO } from './QSO';
 
 @Component
 export default class App extends Vue {
-  websocket = new WebSocket(
-    window.location.protocol === 'https'
-      ? 'wss://'
-      : 'ws://' + window.location.host + '/ws'
-  );
+  websocket: WebSocket = this.connectWebsocket();
   readonly headers = QSOHeaders;
   log: Readonly<QSO>[] = [];
   currentEntry: Partial<QSO> = {
@@ -57,9 +58,35 @@ export default class App extends Vue {
     timestamp: new Date(),
   };
 
+  websocketState: 'connected' | 'connecting' | 'closed' = 'closed';
+
   mounted() {
     window.setInterval(this.updateTime, 1000);
+    this.connectWebsocket();
+  }
+
+  connectWebsocket() {
+    this.websocket = new WebSocket(
+      window.location.protocol === 'https'
+        ? 'wss://'
+        : 'ws://' + window.location.host + '/ws'
+    );
+    this.websocketState = 'connecting';
     this.websocket.addEventListener('message', this.handleWSMessage);
+    this.websocket.addEventListener(
+      'open',
+      () => (this.websocketState = 'connected')
+    );
+    this.websocket.addEventListener('close', () => {
+      this.websocketState = 'closed';
+      // Try to reconnect every 5 seconds
+      let interval = window.setTimeout(() => {
+        window.clearInterval(interval);
+        this.connectWebsocket();
+      }, 5000);
+    });
+
+    return this.websocket;
   }
 
   handleWSMessage(ev: MessageEvent) {
@@ -94,7 +121,7 @@ export default class App extends Vue {
 }
 </script>
 
-<style>
+<style lang="scss">
 #qso-log {
   border: 1px solid black;
   margin-bottom: 1em;
@@ -102,5 +129,23 @@ export default class App extends Vue {
 
 .callsign-input {
   text-transform: uppercase;
+}
+
+.websocket-indicator {
+  width: 1em;
+  position: absolute;
+  right: 0.5em;
+
+  .closed {
+    fill: red;
+  }
+
+  .connected {
+    fill: green;
+  }
+
+  .connecting {
+    fill: yellow;
+  }
 }
 </style>
