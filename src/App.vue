@@ -87,9 +87,9 @@ export default class App extends Vue {
 
   connectWebsocket() {
     this.websocket = new WebSocket(
-      window.location.protocol === 'https'
-        ? 'wss://'
-        : 'ws://' + window.location.host + '/ws'
+      (window.location.protocol === 'https:' ? 'wss://' : 'ws://') +
+        window.location.host +
+        '/ws'
     );
     this.websocketState = 'connecting';
     this.websocket.addEventListener('message', this.handleWSMessage);
