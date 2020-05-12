@@ -41,6 +41,17 @@
       />
       <input type="submit" value="Log!" />
     </form>
+
+    <div id="completions">
+      <span
+        v-for="call in completeCallsign"
+        :key="call"
+        :class="{ worked: stationWorked(call) }"
+        @click="setCallsign(call)"
+      >
+        {{ call }}
+      </span>
+    </div>
   </div>
 </template>
 
@@ -48,10 +59,19 @@
 import { Vue, Component, Watch } from 'vue-property-decorator';
 import { QSO, QSOHeaders, isCompleteQSO } from './QSO';
 
+import fs from 'fs';
+const superCheckPartial = fs.readFileSync('./src/MASUSVE.SCP', {
+  encoding: 'UTF-8',
+});
+
 @Component
 export default class App extends Vue {
-  websocket: WebSocket = this.connectWebsocket();
   readonly headers = QSOHeaders;
+  readonly calls = superCheckPartial
+    .split('\r\n')
+    .filter((line) => !line.startsWith('#'));
+
+  websocket: WebSocket = this.connectWebsocket();
   log: Readonly<QSO>[] = [];
   currentEntry: Partial<QSO> = {
     serial: 0,
@@ -118,6 +138,27 @@ export default class App extends Vue {
       console.error('Incomplete QSO submitted!');
     }
   }
+
+  stationWorked(call: string): boolean {
+    return this.log.find((entry) => entry.callsign === call) !== undefined;
+  }
+
+  setCallsign(call: string) {
+    this.currentEntry.callsign = call;
+  }
+
+  get completeCallsign() {
+    const search = this.currentEntry.callsign?.toUpperCase();
+    if (search === undefined) return [];
+    if (search.includes('*') || search.includes('?') || search.includes('.')) {
+      const regex = RegExp(
+        '^' + search.replace('*', '.+').replace('?', '.') + '$'
+      );
+      return this.calls.filter((call) => regex.test(call));
+    } else {
+      return this.calls.filter((call) => call.startsWith(search));
+    }
+  }
 }
 </script>
 
@@ -147,5 +188,9 @@ export default class App extends Vue {
   .connecting {
     fill: yellow;
   }
+}
+
+.worked {
+  background-color: lightblue;
 }
 </style>
