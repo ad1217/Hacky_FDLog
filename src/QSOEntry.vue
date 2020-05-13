@@ -29,6 +29,7 @@
       <span
         v-for="call in completeCallsign"
         :key="call"
+        class="completion"
         :class="{ worked: stationWorked(call) }"
         @click="setCallsign(call)"
       >
@@ -96,7 +97,7 @@ export default class QSOEntry extends Vue {
 
   get completeCallsign() {
     const search = this.currentEntry.callsign?.toUpperCase();
-    if (search === undefined) return [];
+    if (search === undefined || search.length === 0) return [];
     if (search.includes('*') || search.includes('?') || search.includes('.')) {
       const regex = RegExp(
         '^' + search.replace('*', '.+').replace('?', '.') + '$'
@@ -114,7 +115,17 @@ export default class QSOEntry extends Vue {
   text-transform: uppercase;
 }
 
-.worked {
-  background-color: lightblue;
+.completion {
+  cursor: pointer;
+  padding: 0.1em;
+  border-radius: 0.3em;
+
+  &:hover {
+    background-color: lightgreen;
+  }
+
+  &.worked {
+    background-color: lightblue;
+  }
 }
 </style>
