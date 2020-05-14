@@ -22,6 +22,7 @@
 </template>
 
 <script lang="ts">
+import 'reflect-metadata';
 import { Vue, Component, Watch } from 'vue-property-decorator';
 import { QSO, QSOHeaders, isCompleteQSO } from './QSO';
 
