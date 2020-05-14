@@ -15,7 +15,7 @@
         class="class-input"
         placeholder="Class"
         size="3"
-        v-model="currentEntry.class_"
+        v-model="currentEntry['class']"
       />
       -
       <input
@@ -49,7 +49,8 @@ const superCheckPartial: string = fs.readFileSync('./src/MASUSVE.SCP', {
 });
 
 import { Vue, Component, Prop } from 'vue-property-decorator';
-import { QSO, QSOHeaders, isCompleteQSO } from './QSO';
+
+import { DB_QSO, QSO, QSOHeaders, isQSOValid } from './QSO';
 
 @Component
 export default class QSOEntry extends Vue {
@@ -61,7 +62,7 @@ export default class QSOEntry extends Vue {
   currentEntry: Partial<QSO> = {
     timestamp: new Date(),
     callsign: '',
-    class_: '',
+    class: '',
     section: '',
   };
 
@@ -74,11 +75,14 @@ export default class QSOEntry extends Vue {
   }
 
   logQSO() {
-    if (isCompleteQSO(this.currentEntry)) {
-      // TODO: more robust serial numbering, some sort of deduplication
-      this.currentEntry.serial = this.log.length;
-      this.currentEntry.callsign = this.currentEntry.callsign.toUpperCase();
-      this.$emit('logQSO', this.currentEntry);
+    if (isQSOValid(this.currentEntry)) {
+      const qso = {
+        ...this.currentEntry,
+        serial: this.log.length,
+        timestamp: this.currentEntry.timestamp.getTime(),
+        callsign: this.currentEntry.callsign.toUpperCase(),
+      } as DB_QSO;
+      this.$emit('logQSO', qso);
 
       // reset
       this.currentEntry = {

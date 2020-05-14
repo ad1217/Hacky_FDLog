@@ -1,7 +1,7 @@
 <template>
   <div>
-    <svg class="websocket-indicator" viewBox="-5 -5 10 10">
-      <circle :class="websocketState" r="5" />
+    <svg class="online-indicator" viewBox="-5 -5 10 10">
+      <circle :class="{ 'is-online': isOnline }" r="5" />
     </svg>
 
     <table id="qso-log">
@@ -24,59 +24,51 @@
 <script lang="ts">
 import 'reflect-metadata';
 import { Vue, Component, Watch } from 'vue-property-decorator';
-import { QSO, QSOHeaders, isCompleteQSO } from './QSO';
+import { RxReplicationState } from 'rxdb';
 
+import {
+  couchDBRemote,
+  QSO,
+  DB_QSO,
+  QSOHeaders,
+  QSOCollection,
+  init_db,
+} from './QSO';
 import QSOEntry from './QSOEntry.vue';
 
 @Component({ components: { QSOEntry } })
 export default class App extends Vue {
   readonly headers = QSOHeaders;
+  qsoCollection?: QSOCollection;
+  isOnline: boolean = false;
 
-  websocket: WebSocket = this.connectWebsocket();
   log: Readonly<QSO>[] = [];
 
-  websocketState: 'connected' | 'connecting' | 'closed' = 'closed';
-
-  mounted() {
-    this.connectWebsocket();
-  }
-
-  connectWebsocket() {
-    this.websocket = new WebSocket(
-      (window.location.protocol === 'https:' ? 'wss://' : 'ws://') +
-        window.location.host +
-        '/ws'
-    );
-    this.websocketState = 'connecting';
-    this.websocket.addEventListener('message', this.handleWSMessage);
-    this.websocket.addEventListener(
-      'open',
-      () => (this.websocketState = 'connected')
-    );
-    this.websocket.addEventListener('close', () => {
-      this.websocketState = 'closed';
-      // Try to reconnect every 5 seconds
-      let interval = window.setTimeout(() => {
-        window.clearInterval(interval);
-        this.connectWebsocket();
-      }, 5000);
+  async mounted() {
+    this.qsoCollection = await init_db();
+    this.qsoCollection.find().$.subscribe((results) => {
+      this.log = results
+        .sort((a, b) => a.timestamp - b.timestamp)
+        .map(
+          (result): QSO => {
+            return {
+              ...result.toJSON(),
+              timestamp: new Date(result.timestamp),
+            };
+          }
+        );
     });
 
-    return this.websocket;
+    // Periodically check if CouchDB is availible
+    window.setInterval(() => {
+      fetch(couchDBRemote, { method: 'HEAD' })
+        .then(() => (this.isOnline = true))
+        .catch(() => (this.isOnline = false));
+    }, 1000);
   }
 
-  submitQSO(qso: QSO) {
-    this.websocket.send(JSON.stringify(qso));
-  }
-
-  handleWSMessage(ev: MessageEvent) {
-    const data = JSON.parse(ev.data);
-    console.log(data);
-    if (data instanceof Array) {
-      this.log = data;
-    } else {
-      this.log.push(data);
-    }
+  submitQSO(qso: DB_QSO) {
+    this.qsoCollection?.insert(this.qsoCollection.newDocument(qso));
   }
 }
 </script>
@@ -91,21 +83,14 @@ export default class App extends Vue {
   }
 }
 
-.websocket-indicator {
+.online-indicator {
   width: 1em;
   position: absolute;
   right: 0.5em;
+  fill: red;
 
-  .closed {
-    fill: red;
-  }
-
-  .connected {
+  .is-online {
     fill: green;
-  }
-
-  .connecting {
-    fill: yellow;
   }
 }
 </style>
