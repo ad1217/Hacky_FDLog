@@ -7,12 +7,14 @@
         required
         class="callsign-input"
         placeholder="Callsign"
+        size="10"
         v-model="currentEntry.callsign"
       />
       <input
         required
         class="class-input"
         placeholder="Class"
+        size="3"
         v-model="currentEntry.class_"
       />
       -
@@ -20,6 +22,7 @@
         required
         class="section-input"
         placeholder="Section"
+        size="4"
         v-model="currentEntry.section"
       />
       <input type="submit" value="Log!" />
