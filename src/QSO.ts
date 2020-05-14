@@ -14,7 +14,6 @@ export const couchDBRemote = 'http://localhost:5984/';
 export const couchDBRemoteDB = 'field_day';
 
 export interface QSO {
-  serial: number;
   timestamp: Date;
   callsign: string;
   class: string;
@@ -23,7 +22,6 @@ export interface QSO {
 
 export function isQSOValid(qso: Partial<QSO>): boolean {
   return !!(
-    qso.serial !== undefined &&
     qso.timestamp &&
     (qso.callsign?.length ?? 0) > 0 &&
     (qso['class']?.length ?? 0) > 0 &&
@@ -38,7 +36,6 @@ export type DB_QSO = QSO & {
 export type QSODocument = RxDocument<DB_QSO>;
 
 export const QSOHeaders: Record<keyof QSO, string> = {
-  serial: 'Serial',
   timestamp: 'Timestamp',
   callsign: 'Callsign',
   class: 'Class',
@@ -52,13 +49,12 @@ const qsoSchema: RxJsonSchema<DB_QSO> = {
   keyCompression: true,
   type: 'object',
   properties: {
-    serial: { type: 'number' },
     timestamp: { type: 'number' },
     callsign: { type: 'string' },
     class: { type: 'string' },
     section: { type: 'string' },
   },
-  required: ['serial', 'timestamp', 'callsign', 'class', 'section'],
+  required: ['timestamp', 'callsign', 'class', 'section'],
 };
 
 export type QSOCollection = RxCollection<QSODocument>;

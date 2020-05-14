@@ -6,11 +6,13 @@
 
     <table id="qso-log">
       <tr>
+        <th>#</th>
         <th v-for="header in Object.values(headers)" :key="header">
           {{ header }}
         </th>
       </tr>
-      <tr class="qso" v-for="qso in log" :key="qso.serial">
+      <tr class="qso" v-for="(qso, idx) in log" :key="idx">
+        <td>{{ idx }}</td>
         <td v-for="header in Object.keys(headers)" :key="header">
           {{ qso[header] }}
         </td>

@@ -78,7 +78,6 @@ export default class QSOEntry extends Vue {
     if (isQSOValid(this.currentEntry)) {
       const qso = {
         ...this.currentEntry,
-        serial: this.log.length,
         timestamp: this.currentEntry.timestamp.getTime(),
         callsign: this.currentEntry.callsign.toUpperCase(),
       } as DB_QSO;
@@ -86,7 +85,6 @@ export default class QSOEntry extends Vue {
 
       // reset
       this.currentEntry = {
-        serial: this.log.length,
         timestamp: new Date(),
       };
     } else {
