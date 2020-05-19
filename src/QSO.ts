@@ -10,7 +10,7 @@ RxDB.plugin(pouchdb_adapter_idb);
 import * as pouchdb_adapter_http from 'pouchdb-adapter-http';
 RxDB.plugin(pouchdb_adapter_http);
 
-export const couchDBRemote = 'http://localhost:5984/';
+export const couchDBRemote = 'http://' + window.location.hostname + ':5984/';
 export const couchDBRemoteDB = 'field_day';
 
 export interface QSO {
