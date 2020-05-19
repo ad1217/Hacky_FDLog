@@ -52,7 +52,6 @@ const qsoSchema: RxJsonSchema<DB_QSO> = {
   title: 'QSO',
   description: 'describes a QSO',
   version: 0,
-  keyCompression: true,
   type: 'object',
   properties: {
     timestamp: { type: 'number' },
