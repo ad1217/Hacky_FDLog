@@ -57,6 +57,7 @@ export default class App extends Vue {
             return {
               ...result.toJSON(),
               timestamp: new Date(result.timestamp),
+              frequency: result.frequency.toLocaleString('de-DE'),
             };
           }
         );

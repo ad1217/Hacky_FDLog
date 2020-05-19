@@ -15,28 +15,34 @@ export const couchDBRemoteDB = 'field_day';
 
 export interface QSO {
   timestamp: Date;
+  frequency: string;
+  mode: string;
   callsign: string;
   class: string;
   section: string;
 }
 
-export function isQSOValid(qso: Partial<QSO>): boolean {
+export function isQSOValid(qso: QSO | DB_QSO): boolean {
   return !!(
     qso.timestamp &&
-    (qso.callsign?.length ?? 0) > 0 &&
-    (qso['class']?.length ?? 0) > 0 &&
-    (qso.section?.length ?? 0) > 0
+    qso.frequency > 0 &&
+    qso.mode.length > 0 &&
+    qso.callsign.length > 0 &&
+    qso['class'].length > 0 &&
+    qso.section.length > 0
   );
 }
 
-export type DB_QSO = QSO & {
-  timestamp: number;
-};
+type Overwrite<T, U> = Pick<T, Exclude<keyof T, keyof U>> & U;
+
+export type DB_QSO = Overwrite<QSO, { timestamp: number; frequency: number }>;
 
 export type QSODocument = RxDocument<DB_QSO>;
 
 export const QSOHeaders: Record<keyof QSO, string> = {
   timestamp: 'Timestamp',
+  frequency: 'Frequency',
+  mode: 'Mode',
   callsign: 'Callsign',
   class: 'Class',
   section: 'Section',
@@ -50,6 +56,8 @@ const qsoSchema: RxJsonSchema<DB_QSO> = {
   type: 'object',
   properties: {
     timestamp: { type: 'number' },
+    frequency: { type: 'number' },
+    mode: { type: 'string' },
     callsign: { type: 'string' },
     class: { type: 'string' },
     section: { type: 'string' },

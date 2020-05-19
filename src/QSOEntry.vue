@@ -3,6 +3,23 @@
     <span>#{{ log.length }}</span>
     <span>{{ currentEntry.timestamp.toISOString() }}</span>
     <form id="qso-form" @submit.prevent="logQSO">
+      <div>
+        <input
+          required
+          class="frequency-input"
+          placeholder="Frequency"
+          size="10"
+          v-model="currentEntry.frequency"
+        />
+        <input
+          required
+          class="mode-input"
+          placeholder="Mode"
+          size="3"
+          v-model="currentEntry.mode"
+        />
+      </div>
+
       <input
         required
         class="callsign-input"
@@ -52,6 +69,17 @@ import { Vue, Component, Prop } from 'vue-property-decorator';
 
 import { DB_QSO, QSO, QSOHeaders, isQSOValid } from './QSO';
 
+function emptyQSO(): QSO {
+  return {
+    timestamp: new Date(),
+    frequency: '',
+    mode: '',
+    callsign: '',
+    class: '',
+    section: '',
+  };
+}
+
 @Component
 export default class QSOEntry extends Vue {
   @Prop({ required: true }) readonly log!: Readonly<QSO>[];
@@ -59,12 +87,7 @@ export default class QSOEntry extends Vue {
     .split('\r\n')
     .filter((line) => !line.startsWith('#'));
 
-  currentEntry: Partial<QSO> = {
-    timestamp: new Date(),
-    callsign: '',
-    class: '',
-    section: '',
-  };
+  currentEntry: QSO = emptyQSO();
 
   mounted() {
     window.setInterval(this.updateTime, 1000);
@@ -75,20 +98,19 @@ export default class QSOEntry extends Vue {
   }
 
   logQSO() {
-    if (isQSOValid(this.currentEntry)) {
-      const qso = {
-        ...this.currentEntry,
-        timestamp: this.currentEntry.timestamp.getTime(),
-        callsign: this.currentEntry.callsign.toUpperCase(),
-      } as DB_QSO;
+    // TODO: better validation
+    const qso = {
+      ...this.currentEntry,
+      frequency: parseInt(this.currentEntry.frequency.replace('.', '')),
+      timestamp: this.currentEntry.timestamp.getTime(),
+      callsign: this.currentEntry.callsign.toUpperCase(),
+    } as DB_QSO;
+    if (isQSOValid(qso)) {
       this.$emit('logQSO', qso);
-
       // reset
-      this.currentEntry = {
-        timestamp: new Date(),
-      };
+      this.currentEntry = emptyQSO();
     } else {
-      console.error('Incomplete QSO submitted!');
+      alert('Incomplete QSO submitted!');
     }
   }
 
