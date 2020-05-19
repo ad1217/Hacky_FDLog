@@ -1,8 +1,8 @@
 <template>
   <div>
-    <svg class="online-indicator" viewBox="-5 -5 10 10">
-      <circle :class="{ 'is-online': isOnline }" r="5" />
-    </svg>
+    <div class="indicators">
+      <Indicator name="CouchDB" :status="isOnline"> </Indicator>
+    </div>
 
     <table id="qso-log">
       <tr>
@@ -37,8 +37,9 @@ import {
   init_db,
 } from './QSO';
 import QSOEntry from './QSOEntry.vue';
+import Indicator from './Indicator.vue';
 
-@Component({ components: { QSOEntry } })
+@Component({ components: { QSOEntry, Indicator } })
 export default class App extends Vue {
   readonly headers = QSOHeaders;
   qsoCollection?: QSOCollection;
@@ -85,14 +86,8 @@ export default class App extends Vue {
   }
 }
 
-.online-indicator {
-  width: 1em;
+.indicators {
   position: absolute;
   right: 0.5em;
-  fill: red;
-
-  .is-online {
-    fill: green;
-  }
 }
 </style>
