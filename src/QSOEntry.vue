@@ -3,7 +3,28 @@
     <span>#{{ log.length }}</span>
     <span>{{ currentEntry.timestamp.toISOString() }}</span>
     <form id="qso-form" @submit.prevent="logQSO">
-      <div>
+      <div v-if="remoteTX !== undefined">
+        <input
+          required
+          class="frequency-input"
+          placeholder="Frequency"
+          readonly
+          size="10"
+          :value="
+            (remoteTX.VFOAFreq && remoteTX.VFOAFreq.toLocaleString('de-DE'))
+          "
+        />
+        <input
+          required
+          class="mode-input"
+          placeholder="Mode"
+          readonly
+          size="3"
+          :value="(remoteTX.mode)"
+        />
+        <span> PWR:{{ remoteTX.RFPower }} </span>
+      </div>
+      <div v-else>
         <input
           required
           class="frequency-input"
@@ -68,6 +89,7 @@ const superCheckPartial: string = fs.readFileSync('./src/MASUSVE.SCP', {
 import { Vue, Component, Prop } from 'vue-property-decorator';
 
 import { DB_QSO, QSO, QSOHeaders, isQSOValid } from './QSO';
+import RemoteTX from './RemoteTX';
 
 function emptyQSO(): QSO {
   return {
@@ -83,6 +105,7 @@ function emptyQSO(): QSO {
 @Component
 export default class QSOEntry extends Vue {
   @Prop({ required: true }) readonly log!: Readonly<QSO>[];
+  @Prop() readonly remoteTX?: RemoteTX;
   readonly calls = superCheckPartial
     .split('\r\n')
     .filter((line) => !line.startsWith('#'));
@@ -101,9 +124,16 @@ export default class QSOEntry extends Vue {
     // TODO: better validation
     const qso = {
       ...this.currentEntry,
-      frequency: parseInt(this.currentEntry.frequency.replace('.', '')),
       timestamp: this.currentEntry.timestamp.getTime(),
       callsign: this.currentEntry.callsign.toUpperCase(),
+      ...(this.remoteTX
+        ? {
+            frequency: this.remoteTX.VFOAFreq, // TODO: determine active VFO
+            mode: this.remoteTX.mode,
+          }
+        : {
+            frequency: parseInt(this.currentEntry.frequency.replace('.', '')),
+          }),
     } as DB_QSO;
     if (isQSOValid(qso)) {
       this.$emit('logQSO', qso);

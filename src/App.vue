@@ -2,6 +2,12 @@
   <div>
     <div class="indicators">
       <Indicator name="CouchDB" :status="isOnline"> </Indicator>
+      <Indicator
+        name="RemoteTX Radio"
+        :status="remoteTX.ws2ReadyState"
+        :latency="remoteTX.latency"
+      >
+      </Indicator>
     </div>
 
     <table id="qso-log">
@@ -19,7 +25,7 @@
       </tr>
     </table>
 
-    <QSOEntry :log="log" @logQSO="submitQSO" />
+    <QSOEntry :log="log" :remoteTX="remoteTX" @logQSO="submitQSO"> </QSOEntry>
   </div>
 </template>
 
@@ -36,6 +42,8 @@ import {
   QSOCollection,
   init_db,
 } from './QSO';
+import RemoteTX from './RemoteTX';
+
 import QSOEntry from './QSOEntry.vue';
 import Indicator from './Indicator.vue';
 
@@ -44,6 +52,7 @@ export default class App extends Vue {
   readonly headers = QSOHeaders;
   qsoCollection?: QSOCollection;
   isOnline: boolean = false;
+  remoteTX = new RemoteTX('w1hs.remotetx.net');
 
   log: Readonly<QSO>[] = [];
 
