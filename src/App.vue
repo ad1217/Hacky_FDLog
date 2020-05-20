@@ -10,20 +10,7 @@
       </Indicator>
     </div>
 
-    <table id="qso-log">
-      <tr>
-        <th>#</th>
-        <th v-for="header in Object.values(headers)" :key="header">
-          {{ header }}
-        </th>
-      </tr>
-      <tr class="qso" v-for="(qso, idx) in log" :key="idx">
-        <td>{{ idx }}</td>
-        <td v-for="header in Object.keys(headers)" :key="header">
-          {{ qso[header] }}
-        </td>
-      </tr>
-    </table>
+    <QSOLog :log="log"></QSOLog>
 
     <QSOEntry :log="log" :remoteTX="remoteTX" @logQSO="submitQSO"> </QSOEntry>
   </div>
@@ -34,22 +21,15 @@ import 'reflect-metadata';
 import { Vue, Component, Watch } from 'vue-property-decorator';
 import { RxReplicationState } from 'rxdb';
 
-import {
-  couchDBRemote,
-  QSO,
-  DB_QSO,
-  QSOHeaders,
-  QSOCollection,
-  init_db,
-} from './QSO';
+import { couchDBRemote, QSO, DB_QSO, QSOCollection, init_db } from './QSO';
 import RemoteTX from './RemoteTX';
 
-import QSOEntry from './QSOEntry.vue';
 import Indicator from './Indicator.vue';
+import QSOLog from './QSOLog.vue';
+import QSOEntry from './QSOEntry.vue';
 
-@Component({ components: { QSOEntry, Indicator } })
+@Component({ components: { Indicator, QSOLog, QSOEntry } })
 export default class App extends Vue {
-  readonly headers = QSOHeaders;
   qsoCollection?: QSOCollection;
   isOnline: boolean = false;
   remoteTX = new RemoteTX('w1hs.remotetx.net');
@@ -87,15 +67,6 @@ export default class App extends Vue {
 </script>
 
 <style lang="scss">
-#qso-log {
-  border: 1px solid black;
-  margin-bottom: 1em;
-
-  tr:nth-child(odd) {
-    background-color: #b0b0b0;
-  }
-}
-
 .indicators {
   position: absolute;
   right: 0.5em;
