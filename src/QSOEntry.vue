@@ -2,7 +2,11 @@
   <div>
     <span>#{{ log.length }}</span>
     <span>{{ currentEntry.timestamp.toISOString() }}</span>
-    <form id="qso-form" @submit.prevent="logQSO">
+    <form
+      class="qso-form"
+      :class="{ dupe: dupes.length > 0 }"
+      @submit.prevent="logQSO"
+    >
       <div v-if="remoteTXConnected">
         <input
           required
@@ -66,6 +70,11 @@
       <input type="submit" value="Log!" />
     </form>
 
+    <div v-if="dupes.length > 0">
+      DUPES:
+      <QSOLog :log="dupes"></QSOLog>
+    </div>
+
     <div class="completions">
       <span
         v-for="call in callsignCompletions"
@@ -91,6 +100,8 @@ import { Vue, Component, Prop } from 'vue-property-decorator';
 import { DB_QSO, QSO, QSOHeaders, isQSOValid } from './QSO';
 import RemoteTX from './RemoteTX';
 
+import QSOLog from './QSOLog.vue';
+
 function emptyQSO(): QSO {
   return {
     timestamp: new Date(),
@@ -102,7 +113,7 @@ function emptyQSO(): QSO {
   };
 }
 
-@Component
+@Component({ components: { QSOLog } })
 export default class QSOEntry extends Vue {
   @Prop({ required: true }) readonly log!: Readonly<QSO>[];
   @Prop() readonly remoteTX?: RemoteTX;
@@ -123,17 +134,9 @@ export default class QSOEntry extends Vue {
   logQSO() {
     // TODO: better validation
     const qso = {
-      ...this.currentEntry,
-      timestamp: this.currentEntry.timestamp.getTime(),
-      callsign: this.currentEntry.callsign.toUpperCase(),
-      ...(this.remoteTX
-        ? {
-            frequency: this.remoteTX.VFOAFreq, // TODO: determine active VFO
-            mode: this.remoteTX.mode,
-          }
-        : {
-            frequency: parseInt(this.currentEntry.frequency.replace('.', '')),
-          }),
+      ...this.activeQSO,
+      frequency: this.frequencyToInt(this.activeQSO.frequency),
+      timestamp: this.activeQSO.timestamp.getTime(),
     } as DB_QSO;
     if (isQSOValid(qso)) {
       this.$emit('logQSO', qso);
@@ -159,8 +162,76 @@ export default class QSOEntry extends Vue {
     );
   }
 
+  frequencyToInt(frequency: string): number {
+    return parseInt(frequency.replace(/\./g, ''));
+  }
+
+  band(freq: number | string) {
+    const bands = {
+      '160 Meters': [1.8, 2.0],
+      '80 Meters': [3.5, 4.0],
+      '60 Meters': [5330.5, 5403.5],
+      '40 Meters': [7.0, 7.3],
+      '30 Meters': [10.1, 10.15],
+      '20 Meters': [14.0, 14.35],
+      '17 Meters': [18.068, 18.168],
+      '15 Meters': [21.0, 21.45],
+      '12 Meters': [24.89, 24.99],
+      '10 Meters': [28, 29.7],
+      '6 Meters': [50, 54],
+      '2 Meters': [144, 148],
+      '1.25 Meters': [222, 225],
+      '70 Centimeters': [420, 450],
+      '33 Centimeters': [902, 928],
+      '23 Centimeters': [1240, 1300],
+      '13 Centimeters': [2300, 2450],
+      '3300-3500 MHz': [3300, 3500],
+      '3 Centimeters': [10000.0, 10500.0],
+    };
+
+    if (typeof freq === 'string') {
+      freq = this.frequencyToInt(freq);
+    }
+    const freqMHz = freq / 1000000;
+
+    const maybeBand = Object.entries(bands).find(
+      ([, [min, max]]) => freqMHz >= min && freqMHz <= max
+    );
+    if (maybeBand !== undefined) {
+      return maybeBand[0];
+    } else {
+      return false;
+    }
+  }
+
+  // Merge current entry and other data sources to get the current QSO
+  get activeQSO(): QSO {
+    return {
+      ...this.currentEntry,
+      callsign: this.currentEntry.callsign.toUpperCase(),
+      ...(this.remoteTXConnected
+        ? {
+            // TODO: determine active VFO
+            frequency: this.remoteTX.VFOAFreq?.toLocaleString('de-DE'),
+            mode: this.remoteTX.mode,
+          }
+        : {
+            frequency: this.currentEntry.frequency,
+          }),
+    };
+  }
+
+  get dupes(): QSO[] {
+    return this.log.filter(
+      (qso) =>
+        qso.callsign === this.activeQSO.callsign &&
+        qso.mode === this.activeQSO.mode &&
+        this.band(qso.frequency) === this.band(this.activeQSO.frequency)
+    );
+  }
+
   get callsignCompletions(): string[] {
-    const search = this.currentEntry.callsign?.toUpperCase();
+    const search = this.activeQSO.callsign.toUpperCase();
     if (search === undefined || search.length === 0) return [];
     if (search.includes('*') || search.includes('?') || search.includes('.')) {
       const regex = RegExp(
@@ -175,6 +246,10 @@ export default class QSOEntry extends Vue {
 </script>
 
 <style lang="scss">
+.qso-form.dupe {
+  background-color: red;
+}
+
 .callsign-input {
   text-transform: uppercase;
 }
