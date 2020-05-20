@@ -3,7 +3,7 @@
     <span>#{{ log.length }}</span>
     <span>{{ currentEntry.timestamp.toISOString() }}</span>
     <form id="qso-form" @submit.prevent="logQSO">
-      <div v-if="remoteTX !== undefined">
+      <div v-if="remoteTXConnected">
         <input
           required
           class="frequency-input"
@@ -150,6 +150,13 @@ export default class QSOEntry extends Vue {
 
   setCallsign(call: string) {
     this.currentEntry.callsign = call;
+  }
+
+  get remoteTXConnected(): boolean {
+    return (
+      this.remoteTX !== undefined &&
+      this.remoteTX.ws2ReadyState === WebSocket.OPEN
+    );
   }
 
   get completeCallsign() {
