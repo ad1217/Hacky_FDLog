@@ -8,8 +8,8 @@
     </tr>
     <tr class="qso" v-for="(qso, idx) in log" :key="idx">
       <td>{{ idx }}</td>
-      <td v-for="header in Object.keys(headers)" :key="header">
-        {{ qso[header] }}
+      <td v-for="header in qsoKeys" :key="header">
+        {{ formatCol(qso, header) }}
       </td>
     </tr>
   </table>
@@ -24,6 +24,19 @@ import { QSO, QSOHeaders } from './QSO';
 export default class QSOLog extends Vue {
   readonly headers = QSOHeaders;
   @Prop({ required: true }) log!: Readonly<QSO>[];
+
+  formatCol(qso: QSO, header: keyof QSO) {
+    const prop = qso[header];
+    if (prop instanceof Date) {
+      return prop.toISOString();
+    } else {
+      return prop;
+    }
+  }
+
+  get qsoKeys() {
+    return Object.keys(this.headers) as (keyof QSO)[];
+  }
 }
 </script>
 <style lang="scss">
