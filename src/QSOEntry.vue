@@ -68,7 +68,7 @@
 
     <div class="completions">
       <span
-        v-for="call in completeCallsign"
+        v-for="call in callsignCompletions"
         :key="call"
         class="completion"
         :class="{ worked: stationWorked(call) }"
@@ -159,7 +159,7 @@ export default class QSOEntry extends Vue {
     );
   }
 
-  get completeCallsign() {
+  get callsignCompletions(): string[] {
     const search = this.currentEntry.callsign?.toUpperCase();
     if (search === undefined || search.length === 0) return [];
     if (search.includes('*') || search.includes('?') || search.includes('.')) {
