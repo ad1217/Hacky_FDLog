@@ -81,7 +81,7 @@
         :key="call"
         class="completion"
         :class="{ worked: stationWorked(call) }"
-        @click="setCallsign(call)"
+        @click="this.currentEntry.callsign = call"
       >
         {{ call }}
       </span>
@@ -127,12 +127,20 @@ export default class QSOEntry extends Vue {
     window.setInterval(this.updateTime, 1000);
   }
 
+  /**
+   * Update the current time
+   */
   updateTime() {
     this.currentEntry.timestamp = new Date();
   }
 
+  /**
+   * Convert the active QSO to a DB_QSO, and emit an event for the
+   * parent to log it
+   *
+   * @todo better validation
+   */
   logQSO() {
-    // TODO: better validation
     const qso = {
       ...this.activeQSO,
       frequency: this.frequencyToInt(this.activeQSO.frequency),
@@ -147,14 +155,17 @@ export default class QSOEntry extends Vue {
     }
   }
 
+  /**
+   * Check if a callsign exists in the log
+   * @param call - the callsign to check
+   */
   stationWorked(call: string): boolean {
     return this.log.find((entry) => entry.callsign === call) !== undefined;
   }
 
-  setCallsign(call: string) {
-    this.currentEntry.callsign = call;
-  }
-
+  /**
+   * Is the RemoteTX websocket connected?
+   */
   get remoteTXConnected(): boolean {
     return (
       this.remoteTX !== undefined &&
@@ -162,10 +173,19 @@ export default class QSOEntry extends Vue {
     );
   }
 
+  /**
+   * Converts a frequency of the form '000.000.000' into an integer, in Hz
+   * @param frequency - the frequency to convert
+   */
   frequencyToInt(frequency: string): number {
     return parseInt(frequency.replace(/\./g, ''));
   }
 
+  /**
+   * Determine which band a frequency falls in
+   * @param freq - the frequency to lookup. Either a number, in Hz, or
+   *               a string of the form 000.000.000, also in Hz
+   */
   band(freq: number | string) {
     const bands = {
       '160 Meters': [1.8, 2.0],
@@ -204,7 +224,9 @@ export default class QSOEntry extends Vue {
     }
   }
 
-  // Merge current entry and other data sources to get the current QSO
+  /**
+   * Merge current entry and other data sources to get the current QSO
+   */
   get activeQSO(): QSO {
     return {
       ...this.currentEntry,
@@ -221,6 +243,9 @@ export default class QSOEntry extends Vue {
     };
   }
 
+  /**
+   * Find QSOs in the log that have the same callsign, band, and mode
+   */
   get dupes(): QSO[] {
     return this.log.filter(
       (qso) =>
@@ -230,6 +255,12 @@ export default class QSOEntry extends Vue {
     );
   }
 
+  /**
+   * Lookup the current partial callsign/search term in Super Check Partial.
+   *
+   * Uses regexes if certain characters exist: '*' becomes '.*', and a
+   * '.' or '?' become '.'
+   */
   get callsignCompletions(): string[] {
     const search = this.activeQSO.callsign.toUpperCase();
     if (search === undefined || search.length === 0) return [];
