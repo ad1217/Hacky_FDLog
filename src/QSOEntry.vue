@@ -4,7 +4,7 @@
     <span>{{ currentEntry.timestamp.toISOString() }}</span>
     <form
       class="qso-form"
-      :class="{ dupe: dupes.length > 0 }"
+      :class="{ dupe: dupes.length > 0, inconsistent: inconsistent.length > 0 }"
       @submit.prevent="logQSO"
     >
       <div v-if="remoteTXConnected">
@@ -73,6 +73,11 @@
     <div v-if="dupes.length > 0">
       DUPES:
       <QSOLog :log="dupes"></QSOLog>
+    </div>
+
+    <div v-if="inconsistent.length > 0">
+      INCONSISTENT:
+      <QSOLog :log="inconsistent"></QSOLog>
     </div>
 
     <div class="completions">
@@ -256,6 +261,19 @@ export default class QSOEntry extends Vue {
   }
 
   /**
+   * Find QSOs in the log that have the same callsign, but differ in
+   * either class or section
+   */
+  get inconsistent(): QSO[] {
+    return this.log.filter(
+      (qso) =>
+        qso.callsign === this.activeQSO.callsign &&
+        (qso.class !== this.activeQSO.class ||
+          qso.section !== this.activeQSO.section)
+    );
+  }
+
+  /**
    * Lookup the current partial callsign/search term in Super Check Partial.
    *
    * Uses regexes if certain characters exist: '*' becomes '.*', and a
@@ -277,8 +295,13 @@ export default class QSOEntry extends Vue {
 </script>
 
 <style lang="scss">
-.qso-form.dupe {
-  background-color: red;
+.qso-form {
+  &.dupe {
+    background-color: red;
+  }
+  &.inconsistent {
+    background-color: yellow;
+  }
 }
 
 .callsign-input {
