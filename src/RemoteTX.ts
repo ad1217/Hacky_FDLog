@@ -44,6 +44,10 @@ export default class RemoteTX {
     return this.ws2;
   }
 
+  close() {
+    this.ws2.close();
+  }
+
   periodicPoll() {
     const commands = [
       '10', //Mode

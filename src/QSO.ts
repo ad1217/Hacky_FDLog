@@ -10,9 +10,6 @@ RxDB.plugin(pouchdb_adapter_idb);
 import * as pouchdb_adapter_http from 'pouchdb-adapter-http';
 RxDB.plugin(pouchdb_adapter_http);
 
-export const couchDBRemote = 'http://' + window.location.hostname + ':5984/';
-export const couchDBRemoteDB = 'field_day';
-
 export interface QSO {
   timestamp: number;
   frequency: number;
@@ -179,9 +176,9 @@ const qsoSchema: RxJsonSchema<QSO> = {
 export type QSOCollection = RxCollection<QSODocument>;
 export type DBCollections = { qsos: QSOCollection };
 
-export async function init_db() {
+export async function init_db(baseURL: string, db: string) {
   const myDatabase = await createRxDatabase<DBCollections>({
-    name: 'field_day',
+    name: db,
     adapter: 'idb', // IndexedDB
   });
 
@@ -192,7 +189,7 @@ export async function init_db() {
   });
 
   qsoCollection.sync({
-    remote: couchDBRemote + couchDBRemoteDB,
+    remote: baseURL + db,
     options: {
       live: true,
       retry: true,
