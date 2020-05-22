@@ -6,28 +6,30 @@
         {{ header }}
       </th>
     </tr>
-    <tr class="qso" v-for="(qso, idx) in log" :key="idx">
-      <td>{{ idx }}</td>
-      <td v-for="header in qsoKeys" :key="header">
-        {{ qso.formatCol(header) }}
-      </td>
-    </tr>
+    <QSOLogRow
+      v-for="(qso, index) in log"
+      :key="JSON.stringify(qso.document && qso.document.toJSON())"
+      :index="index"
+      :qso="qso"
+    >
+    </QSOLogRow>
   </table>
 </template>
 
 <script lang="ts">
 import { Vue, Component, Prop } from 'vue-property-decorator';
 
-import { IHumanReadableQSO, HumanReadableQSO } from './QSO';
+import { HumanReadableQSO } from './QSO';
 
-@Component
+import QSOLogRow from './QSOLogRow.vue';
+
+/**
+ * A table of QSO log entries
+ */
+@Component({ components: { QSOLogRow } })
 export default class QSOLog extends Vue {
   readonly headers = HumanReadableQSO.headers;
   @Prop({ required: true }) log!: Readonly<HumanReadableQSO>[];
-
-  get qsoKeys() {
-    return Object.keys(this.headers) as (keyof IHumanReadableQSO)[];
-  }
 }
 </script>
 <style lang="scss">
