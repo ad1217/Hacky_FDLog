@@ -21,7 +21,13 @@ import 'reflect-metadata';
 import { Vue, Component, Watch } from 'vue-property-decorator';
 import { RxReplicationState } from 'rxdb';
 
-import { couchDBRemote, QSO, DB_QSO, QSOCollection, init_db } from './QSO';
+import {
+  couchDBRemote,
+  QSO,
+  HumanReadableQSO,
+  QSOCollection,
+  init_db,
+} from './QSO';
 import RemoteTX from './RemoteTX';
 
 import Indicator from './Indicator.vue';
@@ -30,26 +36,18 @@ import QSOEntry from './QSOEntry.vue';
 
 @Component({ components: { Indicator, QSOLog, QSOEntry } })
 export default class App extends Vue {
-  qsoCollection?: QSOCollection;
+  qsoCollection?: QSOCollection | null = null;
   isOnline: boolean = false;
   remoteTX = new RemoteTX('w1hs.remotetx.net');
 
-  log: Readonly<QSO>[] = [];
+  log: Readonly<HumanReadableQSO>[] = [];
 
   async mounted() {
     this.qsoCollection = await init_db();
     this.qsoCollection.find().$.subscribe((results) => {
       this.log = results
         .sort((a, b) => a.timestamp - b.timestamp)
-        .map(
-          (result): QSO => {
-            return {
-              ...result.toJSON(),
-              timestamp: new Date(result.timestamp),
-              frequency: result.frequency.toLocaleString('de-DE'),
-            };
-          }
-        );
+        .map((r) => r.asHumanReadableQSO());
     });
 
     // Periodically check if CouchDB is availible
@@ -60,8 +58,8 @@ export default class App extends Vue {
     }, 1000);
   }
 
-  submitQSO(qso: DB_QSO) {
-    this.qsoCollection?.insert(this.qsoCollection.newDocument(qso));
+  submitQSO(qso: QSO) {
+    this.qsoCollection?.newDocument(qso).save();
   }
 }
 </script>

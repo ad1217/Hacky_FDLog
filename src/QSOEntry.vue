@@ -102,31 +102,20 @@ const superCheckPartial: string = fs.readFileSync('./src/MASUSVE.SCP', {
 
 import { Vue, Component, Prop } from 'vue-property-decorator';
 
-import { DB_QSO, QSO, QSOHeaders, isQSOValid } from './QSO';
+import { QSO, HumanReadableQSO } from './QSO';
 import RemoteTX from './RemoteTX';
 
 import QSOLog from './QSOLog.vue';
 
-function emptyQSO(): QSO {
-  return {
-    timestamp: new Date(),
-    frequency: '',
-    mode: '',
-    callsign: '',
-    class: '',
-    section: '',
-  };
-}
-
 @Component({ components: { QSOLog } })
 export default class QSOEntry extends Vue {
-  @Prop({ required: true }) readonly log!: Readonly<QSO>[];
+  @Prop({ required: true }) readonly log!: Readonly<HumanReadableQSO>[];
   @Prop() readonly remoteTX?: RemoteTX;
   readonly calls = superCheckPartial
     .split('\r\n')
     .filter((line) => !line.startsWith('#'));
 
-  currentEntry: QSO = emptyQSO();
+  currentEntry = new HumanReadableQSO();
 
   mounted() {
     window.setInterval(this.updateTime, 1000);
@@ -140,21 +129,16 @@ export default class QSOEntry extends Vue {
   }
 
   /**
-   * Convert the active QSO to a DB_QSO, and emit an event for the
-   * parent to log it
-   *
-   * @todo better validation
+   * Convert the active QSO entry to a {@link QSO}, and emit an event
+   * for the parent component to log it
    */
   logQSO() {
-    const qso = {
-      ...this.activeQSO,
-      frequency: this.frequencyToInt(this.activeQSO.frequency),
-      timestamp: this.activeQSO.timestamp.getTime(),
-    } as DB_QSO;
-    if (isQSOValid(qso)) {
-      this.$emit('logQSO', qso);
+    const qso = this.activeQSO;
+    if (qso.isValid()) {
+      console.log(qso.asQSO());
+      this.$emit('logQSO', qso.asQSO());
       // reset
-      this.currentEntry = emptyQSO();
+      this.currentEntry = new HumanReadableQSO();
     } else {
       alert('Incomplete QSO submitted!');
     }
@@ -172,68 +156,14 @@ export default class QSOEntry extends Vue {
    * Is the RemoteTX websocket connected?
    */
   get remoteTXConnected(): boolean {
-    return (
-      this.remoteTX !== undefined &&
-      this.remoteTX.ws2ReadyState === WebSocket.OPEN
-    );
-  }
-
-  /**
-   * Converts a frequency of the form '000.000.000' into an integer, in Hz
-   * @param frequency - the frequency to convert
-   */
-  frequencyToInt(frequency: string): number {
-    return parseInt(frequency.replace(/\./g, ''));
-  }
-
-  /**
-   * Determine which band a frequency falls in
-   * @param freq - the frequency to lookup. Either a number, in Hz, or
-   *               a string of the form 000.000.000, also in Hz
-   */
-  band(freq: number | string) {
-    const bands = {
-      '160 Meters': [1.8, 2.0],
-      '80 Meters': [3.5, 4.0],
-      '60 Meters': [5330.5, 5403.5],
-      '40 Meters': [7.0, 7.3],
-      '30 Meters': [10.1, 10.15],
-      '20 Meters': [14.0, 14.35],
-      '17 Meters': [18.068, 18.168],
-      '15 Meters': [21.0, 21.45],
-      '12 Meters': [24.89, 24.99],
-      '10 Meters': [28, 29.7],
-      '6 Meters': [50, 54],
-      '2 Meters': [144, 148],
-      '1.25 Meters': [222, 225],
-      '70 Centimeters': [420, 450],
-      '33 Centimeters': [902, 928],
-      '23 Centimeters': [1240, 1300],
-      '13 Centimeters': [2300, 2450],
-      '3300-3500 MHz': [3300, 3500],
-      '3 Centimeters': [10000.0, 10500.0],
-    };
-
-    if (typeof freq === 'string') {
-      freq = this.frequencyToInt(freq);
-    }
-    const freqMHz = freq / 1000000;
-
-    const maybeBand = Object.entries(bands).find(
-      ([, [min, max]]) => freqMHz >= min && freqMHz <= max
-    );
-    if (maybeBand !== undefined) {
-      return maybeBand[0];
-    } else {
-      return false;
-    }
+    return this.remoteTX?.ws2ReadyState === WebSocket.OPEN;
   }
 
   /**
    * Merge current entry and other data sources to get the current QSO
    */
-  get activeQSO(): QSO {
-    return {
+  get activeQSO(): HumanReadableQSO {
+    return new HumanReadableQSO({
       ...this.currentEntry,
       callsign: this.currentEntry.callsign.toUpperCase(),
       ...(this.remoteTXConnected
@@ -245,18 +175,18 @@ export default class QSOEntry extends Vue {
         : {
             frequency: this.currentEntry.frequency,
           }),
-    };
+    });
   }
 
   /**
    * Find QSOs in the log that have the same callsign, band, and mode
    */
-  get dupes(): QSO[] {
+  get dupes(): HumanReadableQSO[] {
     return this.log.filter(
       (qso) =>
         qso.callsign === this.activeQSO.callsign &&
         qso.mode === this.activeQSO.mode &&
-        this.band(qso.frequency) === this.band(this.activeQSO.frequency)
+        qso.band() === qso.band()
     );
   }
 
@@ -264,7 +194,7 @@ export default class QSOEntry extends Vue {
    * Find QSOs in the log that have the same callsign, but differ in
    * either class or section
    */
-  get inconsistent(): QSO[] {
+  get inconsistent(): HumanReadableQSO[] {
     return this.log.filter(
       (qso) =>
         qso.callsign === this.activeQSO.callsign &&
