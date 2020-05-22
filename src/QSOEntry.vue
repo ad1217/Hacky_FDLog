@@ -234,8 +234,15 @@ export default class QSOEntry extends Vue {
   }
 }
 
-.callsign-input {
+.callsign-input,
+.class-input,
+.mode-input,
+.section-input {
   text-transform: uppercase;
+
+  &::placeholder {
+    text-transform: none;
+  }
 }
 
 .completion {
