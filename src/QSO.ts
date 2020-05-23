@@ -14,6 +14,8 @@ export interface QSO {
   timestamp: number;
   frequency: number;
   mode: string;
+  station: string;
+  operator: string;
   callsign: string;
   class: string;
   section: string;
@@ -28,6 +30,8 @@ export type IHumanReadableQSO = Overwrite<
 
 export class HumanReadableQSO implements IHumanReadableQSO {
   timestamp: Date;
+  station: string;
+  operator: string;
   frequency: string;
   mode: string;
   callsign: string;
@@ -36,6 +40,8 @@ export class HumanReadableQSO implements IHumanReadableQSO {
 
   static readonly headers: Record<keyof IHumanReadableQSO, string> = {
     timestamp: 'Timestamp',
+    station: 'Station',
+    operator: 'Operator',
     frequency: 'Frequency',
     mode: 'Mode',
     callsign: 'Callsign',
@@ -45,6 +51,8 @@ export class HumanReadableQSO implements IHumanReadableQSO {
 
   constructor(args?: IHumanReadableQSO, public document?: QSODocument) {
     this.timestamp = args?.timestamp ?? new Date();
+    this.station = args?.station ?? '';
+    this.operator = args?.operator ?? '';
     this.frequency = args?.frequency ?? '';
     this.mode = args?.mode ?? '';
     this.callsign = args?.callsign ?? '';
@@ -65,6 +73,8 @@ export class HumanReadableQSO implements IHumanReadableQSO {
   asQSO(): QSO {
     return {
       timestamp: this.timestamp.getTime(),
+      station: this.station,
+      operator: this.operator,
       frequency: this.frequencyToInt(this.frequency),
       mode: this.mode.toUpperCase(),
       callsign: this.callsign.toUpperCase(),
@@ -120,6 +130,8 @@ export class HumanReadableQSO implements IHumanReadableQSO {
   isValid(): boolean {
     return !!(
       this.timestamp &&
+      this.station.length > 0 &&
+      this.operator.length > 0 &&
       this.frequency.length > 0 &&
       this.mode.length > 0 &&
       this.callsign.length > 0 &&
@@ -164,6 +176,8 @@ const qsoSchema: RxJsonSchema<QSO> = {
   type: 'object',
   properties: {
     timestamp: { type: 'number' },
+    station: { type: 'string' },
+    operator: { type: 'string' },
     frequency: { type: 'number' },
     mode: { type: 'string' },
     callsign: { type: 'string' },

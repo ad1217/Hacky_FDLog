@@ -107,9 +107,12 @@ import RemoteTX from './RemoteTX';
 
 import QSOLog from './QSOLog.vue';
 
+export type StationInfo = Pick<HumanReadableQSO, 'station' | 'operator'>;
+
 @Component({ components: { QSOLog } })
 export default class QSOEntry extends Vue {
   @Prop({ required: true }) readonly log!: Readonly<HumanReadableQSO>[];
+  @Prop({ required: true }) readonly stationInfo!: StationInfo;
   @Prop() readonly remoteTX?: RemoteTX;
   readonly calls = superCheckPartial
     .split('\r\n')
@@ -165,6 +168,7 @@ export default class QSOEntry extends Vue {
   get activeQSO(): HumanReadableQSO {
     return new HumanReadableQSO({
       ...this.currentEntry,
+      ...this.stationInfo,
       callsign: this.currentEntry.callsign.toUpperCase(),
       ...(this.remoteTXConnected
         ? {

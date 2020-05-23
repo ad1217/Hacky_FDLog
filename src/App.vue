@@ -20,11 +20,44 @@
           </option>
         </select>
       </div>
+
+      <div class="station-info">
+        <div>
+          <label>
+            Operator:
+            <input
+              required
+              placeholder="Ex. KC1GDW"
+              size="10"
+              v-model="stationInfo.operator"
+              @change="onStationInfoChange"
+            />
+          </label>
+        </div>
+        <div>
+          <label>
+            Station:
+            <input
+              required
+              placeholder="Ex. Desktop"
+              size="10"
+              v-model="stationInfo.station"
+              @change="onStationInfoChange"
+            />
+          </label>
+        </div>
+      </div>
     </div>
 
     <QSOLog :log="log"></QSOLog>
 
-    <QSOEntry :log="log" :remoteTX="remoteTX" @logQSO="submitQSO"> </QSOEntry>
+    <QSOEntry
+      :log="log"
+      :stationInfo="stationInfo"
+      :remoteTX="remoteTX"
+      @logQSO="submitQSO"
+    >
+    </QSOEntry>
   </div>
 </template>
 
@@ -39,12 +72,15 @@ import RemoteTX from './RemoteTX';
 
 import Indicator from './Indicator.vue';
 import QSOLog from './QSOLog.vue';
-import QSOEntry from './QSOEntry.vue';
+import QSOEntry, { StationInfo } from './QSOEntry.vue';
 
 @Component({ components: { Indicator, QSOLog, QSOEntry } })
 export default class App extends Vue {
   qsoCollection?: QSOCollection | null = null;
   isOnline: boolean = false;
+
+  stationInfo: StationInfo =
+    JSON.parse(localStorage.getItem('stationInfo')) ?? {};
 
   remoteTXDomains = remoteTXDomains;
   selectedRemoteTXDomain: string | null = localStorage.getItem(
@@ -74,6 +110,10 @@ export default class App extends Vue {
 
   submitQSO(qso: QSO) {
     this.qsoCollection?.newDocument(qso).save();
+  }
+
+  onStationInfoChange() {
+    localStorage.setItem('stationInfo', JSON.stringify(this.stationInfo));
   }
 
   maybeOpenRemoteTX() {
