@@ -49,7 +49,10 @@ export class HumanReadableQSO implements IHumanReadableQSO {
     section: 'Section',
   };
 
-  constructor(args?: IHumanReadableQSO, public document?: QSODocument) {
+  constructor(
+    args?: Partial<IHumanReadableQSO>,
+    public document?: QSODocument
+  ) {
     this.timestamp = args?.timestamp ?? new Date();
     this.station = args?.station ?? '';
     this.operator = args?.operator ?? '';

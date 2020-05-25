@@ -140,8 +140,11 @@ export default class QSOEntry extends Vue {
     if (qso.isValid()) {
       console.log(qso.asQSO());
       this.$emit('logQSO', qso.asQSO());
-      // reset
-      this.currentEntry = new HumanReadableQSO();
+      // reset, preserving frequency and mode
+      this.currentEntry = new HumanReadableQSO({
+        frequency: this.currentEntry.frequency,
+        mode: this.currentEntry.mode,
+      });
     } else {
       alert('Incomplete QSO submitted!');
     }
