@@ -86,7 +86,7 @@
         :key="call"
         class="completion"
         :class="{ worked: stationWorked(call) }"
-        @click="this.currentEntry.callsign = call"
+        @click="currentEntry.callsign = call"
       >
         {{ call }}
       </span>
