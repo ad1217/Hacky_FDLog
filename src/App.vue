@@ -58,6 +58,8 @@
       @logQSO="submitQSO"
     >
     </QSOEntry>
+
+    <Scoring :log="log"></Scoring>
   </div>
 </template>
 
@@ -73,8 +75,9 @@ import RemoteTX from './RemoteTX';
 import Indicator from './Indicator.vue';
 import QSOLog from './QSOLog.vue';
 import QSOEntry, { StationInfo } from './QSOEntry.vue';
+import Scoring from './Scoring.vue';
 
-@Component({ components: { Indicator, QSOLog, QSOEntry } })
+@Component({ components: { Indicator, QSOLog, QSOEntry, Scoring } })
 export default class App extends Vue {
   qsoCollection?: QSOCollection | null = null;
   isOnline: boolean = false;
