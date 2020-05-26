@@ -70,6 +70,8 @@
       <input type="submit" value="Log!" />
     </form>
 
+    <CallsignLookup :callsign="this.currentEntry.callsign"> </CallsignLookup>
+
     <div v-if="dupes.length > 0">
       DUPES:
       <QSOLog :log="dupes"></QSOLog>
@@ -106,10 +108,11 @@ import { QSO, HumanReadableQSO } from './QSO';
 import RemoteTX from './RemoteTX';
 
 import QSOLog from './QSOLog.vue';
+import CallsignLookup from './CallsignLookup.vue';
 
 export type StationInfo = Pick<HumanReadableQSO, 'station' | 'operator'>;
 
-@Component({ components: { QSOLog } })
+@Component({ components: { QSOLog, CallsignLookup } })
 export default class QSOEntry extends Vue {
   @Prop({ required: true }) readonly log!: Readonly<HumanReadableQSO>[];
   @Prop({ required: true }) readonly stationInfo!: StationInfo;
